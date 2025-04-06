@@ -1,197 +1,186 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" ng-app="studentApp">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Student CRUD App</title>
+  <meta charset="UTF-8">
+  <title>Student App (AngularJS)</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
   <style>
-    body { font-family: Arial; padding: 20px; background: #f4f4f4; }
-    .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
-    input, button { margin: 5px 0; padding: 8px; width: 100%; }
-    table { width: 100%; margin-top: 20px; border-collapse: collapse; }
-    th, td { padding: 8px; border: 1px solid #ddd; text-align: center; }
-    .hidden { display: none; }
-    .error { color: red; font-size: 12px; }
-    .nav { text-align: right; margin-bottom: 10px; }
-    .nav button { width: auto; margin-left: 10px; }
+    body {
+      font-family: sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .box {
+      background: white;
+      max-width: 500px;
+      margin: auto;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    h2 {
+      margin-top: 0;
+      text-align: center;
+    }
+    input, button {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+    }
+    button.secondary {
+      background-color: #6c757d;
+    }
+    table {
+      width: 100%;
+      margin-top: 10px;
+      border-collapse: collapse;
+    }
+    td, th {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
   </style>
 </head>
-<body>
-  <div class="container" id="login-page">
+<body ng-controller="MainCtrl">
+
+  <!-- Login Component -->
+  <div class="box" ng-if="page === 'login'">
     <h2>Login</h2>
-    <input id="login-username" placeholder="Username" />
-    <input id="login-password" type="password" placeholder="Password" />
-    <div class="error" id="login-error"></div>
-    <button onclick="login()">Submit</button>
-    <button onclick="showPage('register-page')">Register</button>
-    <button onclick="showPage('reset-page')">Reset Password</button>
+    <input ng-model="loginUser" placeholder="Username">
+    <input type="password" ng-model="loginPass" placeholder="Password">
+    <div style="color:red">{{ loginError }}</div>
+    <button ng-click="login()">Login</button>
+    <button class="secondary" ng-click="setPage('register')">Register</button>
+    <button class="secondary" ng-click="setPage('reset')">Reset Password</button>
   </div>
 
-  <div class="container hidden" id="register-page">
+  <!-- Register Component -->
+  <div class="box" ng-if="page === 'register'">
     <h2>Register</h2>
-    <input id="reg-username" placeholder="Username" />
-    <input id="reg-password" type="password" placeholder="Password" />
-    <input id="reg-repassword" type="password" placeholder="Retype Password" />
-    <div class="error" id="register-error"></div>
-    <button onclick="register()">Submit</button>
-    <button onclick="showPage('login-page')">Back</button>
+    <input ng-model="regUser" placeholder="Username">
+    <input type="password" ng-model="regPass" placeholder="Password">
+    <input type="password" ng-model="regRePass" placeholder="Re-enter Password">
+    <div style="color:red">{{ regError }}</div>
+    <button ng-click="register()">Submit</button>
+    <button class="secondary" ng-click="setPage('login')">Back</button>
   </div>
 
-  <div class="container hidden" id="reset-page">
+  <!-- Reset Component -->
+  <div class="box" ng-if="page === 'reset'">
     <h2>Reset Password</h2>
-    <input id="reset-username" placeholder="Username" />
-    <input id="reset-password" type="password" placeholder="New Password" />
-    <button onclick="resetPassword()">Reset</button>
-    <button onclick="showPage('login-page')">Back</button>
+    <input ng-model="resetUser" placeholder="Username">
+    <input type="password" ng-model="resetPass" placeholder="New Password">
+    <button ng-click="reset()">Reset</button>
+    <button class="secondary" ng-click="setPage('login')">Back</button>
   </div>
 
-  <div class="container hidden" id="view-page">
-    <div class="nav">
-      <button onclick="addStudent()">+ Add Student</button>
-      <button onclick="logout()">Logout</button>
+  <!-- View Students Component -->
+  <div class="box" ng-if="page === 'view'">
+    <div style="display:flex; justify-content:space-between; margin-bottom:10px">
+      <button ng-click="setPage('studentForm')">+ Add Student</button>
+      <button class="secondary" ng-click="setPage('login')">Logout</button>
     </div>
-    <h2>Student Records</h2>
+    <h2>Students</h2>
     <table>
-      <thead>
-        <tr><th>Name</th><th>Age</th><th>Actions</th></tr>
-      </thead>
-      <tbody id="student-table"></tbody>
+      <tr><th>Name</th><th>Age</th><th>Actions</th></tr>
+      <tr ng-repeat="s in students">
+        <td>{{ s.name }}</td>
+        <td>{{ s.age }}</td>
+        <td>
+          <button ng-click="editStudent($index)">Edit</button>
+          <button ng-click="deleteStudent($index)">Delete</button>
+        </td>
+      </tr>
     </table>
-    <div id="pagination"></div>
   </div>
 
-  <div class="container hidden" id="student-form-page">
-    <h2 id="form-title">Add Student</h2>
-    <input id="student-name" placeholder="Name" />
-    <input id="student-age" type="number" placeholder="Age" />
-    <button onclick="submitStudent()">Submit</button>
-    <button onclick="showPage('view-page')">Cancel</button>
+  <!-- Student Form Component -->
+  <div class="box" ng-if="page === 'studentForm'">
+    <h2>{{ editingIndex === -1 ? 'Add Student' : 'Edit Student' }}</h2>
+    <input ng-model="student.name" placeholder="Name">
+    <input ng-model="student.age" placeholder="Age" type="number">
+    <button ng-click="saveStudent()">Save</button>
+    <button class="secondary" ng-click="setPage('view')">Cancel</button>
   </div>
 
   <script>
-    let users = [];
-    let students = [];
-    let currentPage = 1;
-    let editingIndex = -1;
-    const perPage = 10;
+    angular.module('studentApp', [])
+      .controller('MainCtrl', function ($scope) {
+        $scope.page = 'login';
+        $scope.users = [];
+        $scope.students = [];
+        $scope.editingIndex = -1;
 
-    function showPage(id) {
-      document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
-      document.getElementById(id).classList.remove('hidden');
-    }
+        $scope.setPage = function(p) {
+          $scope.page = p;
+          $scope.loginError = '';
+          $scope.regError = '';
+        };
 
-    function login() {
-      const user = document.getElementById('login-username').value;
-      const pass = document.getElementById('login-password').value;
-      const match = users.find(u => u.user === user && u.pass === pass);
-      if (match) {
-        showPage('view-page');
-        renderStudents();
-      } else {
-        document.getElementById('login-error').textContent = 'Invalid credentials!';
-      }
-    }
+        $scope.login = function() {
+          const user = $scope.users.find(u => u.user === $scope.loginUser && u.pass === $scope.loginPass);
+          if (user) {
+            $scope.setPage('view');
+          } else {
+            $scope.loginError = 'Invalid username or password!';
+          }
+        };
 
-    function register() {
-      const user = document.getElementById('reg-username').value;
-      const pass = document.getElementById('reg-password').value;
-      const repass = document.getElementById('reg-repassword').value;
-      const exists = users.some(u => u.user === user);
-      if (exists) {
-        document.getElementById('register-error').textContent = 'User already exists!';
-      } else if (pass !== repass) {
-        document.getElementById('register-error').textContent = 'Passwords do not match!';
-      } else {
-        users.push({ user, pass });
-        alert('Registration successful!');
-        showPage('login-page');
-      }
-    }
+        $scope.register = function() {
+          if ($scope.regPass !== $scope.regRePass) {
+            $scope.regError = 'Passwords do not match!';
+            return;
+          }
+          if ($scope.users.some(u => u.user === $scope.regUser)) {
+            $scope.regError = 'Username already exists!';
+            return;
+          }
+          $scope.users.push({ user: $scope.regUser, pass: $scope.regPass });
+          $scope.setPage('login');
+        };
 
-    function resetPassword() {
-      const user = document.getElementById('reset-username').value;
-      const pass = document.getElementById('reset-password').value;
-      const index = users.findIndex(u => u.user === user);
-      if (index !== -1) {
-        users[index].pass = pass;
-        alert('Password reset successful!');
-        showPage('login-page');
-      } else {
-        alert('User not found!');
-      }
-    }
+        $scope.reset = function() {
+          const user = $scope.users.find(u => u.user === $scope.resetUser);
+          if (user) {
+            user.pass = $scope.resetPass;
+            alert('Password reset!');
+            $scope.setPage('login');
+          } else {
+            alert('User not found!');
+          }
+        };
 
-    function logout() {
-      showPage('login-page');
-    }
+        $scope.saveStudent = function() {
+          if ($scope.editingIndex === -1) {
+            $scope.students.push(angular.copy($scope.student));
+          } else {
+            $scope.students[$scope.editingIndex] = angular.copy($scope.student);
+          }
+          $scope.student = {};
+          $scope.editingIndex = -1;
+          $scope.setPage('view');
+        };
 
-    function addStudent() {
-      editingIndex = -1;
-      document.getElementById('form-title').textContent = 'Add Student';
-      document.getElementById('student-name').value = '';
-      document.getElementById('student-age').value = '';
-      showPage('student-form-page');
-    }
+        $scope.editStudent = function(index) {
+          $scope.editingIndex = index;
+          $scope.student = angular.copy($scope.students[index]);
+          $scope.setPage('studentForm');
+        };
 
-    function editStudent(index) {
-      editingIndex = index;
-      document.getElementById('form-title').textContent = 'Edit Student';
-      document.getElementById('student-name').value = students[index].name;
-      document.getElementById('student-age').value = students[index].age;
-      showPage('student-form-page');
-    }
-
-    function deleteStudent(index) {
-      if (confirm('Delete this student?')) {
-        students.splice(index, 1);
-        renderStudents();
-      }
-    }
-
-    function submitStudent() {
-      const name = document.getElementById('student-name').value;
-      const age = document.getElementById('student-age').value;
-      if (editingIndex === -1) {
-        students.push({ name, age });
-      } else {
-        students[editingIndex] = { name, age };
-      }
-      showPage('view-page');
-      renderStudents();
-    }
-
-    function renderStudents() {
-      const start = (currentPage - 1) * perPage;
-      const paginated = students.slice(start, start + perPage);
-      const tbody = document.getElementById('student-table');
-      tbody.innerHTML = '';
-      paginated.forEach((s, i) => {
-        const globalIndex = start + i;
-        tbody.innerHTML += `<tr>
-          <td>${s.name}</td>
-          <td>${s.age}</td>
-          <td>
-            <button onclick="editStudent(${globalIndex})">Edit</button>
-            <button onclick="deleteStudent(${globalIndex})">Delete</button>
-          </td>
-        </tr>`;
+        $scope.deleteStudent = function(index) {
+          if (confirm('Delete this student?')) {
+            $scope.students.splice(index, 1);
+          }
+        };
       });
-
-      const pageCount = Math.ceil(students.length / perPage);
-      const pagination = document.getElementById('pagination');
-      pagination.innerHTML = '';
-      for (let i = 1; i <= pageCount; i++) {
-        pagination.innerHTML += `<button onclick="changePage(${i})">${i}</button>`;
-      }
-    }
-
-    function changePage(page) {
-      currentPage = page;
-      renderStudents();
-    }
-
-    showPage('login-page');
   </script>
 </body>
 </html>
